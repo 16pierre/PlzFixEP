@@ -45,7 +45,17 @@ python3 main.py traktor /home/my_user_name/some_custom_file.json
 ```
 pip3 install -r requirements.txt
 ```
-- configure the `locations.json` file
+- create a `locations.json` file. It should look like:
+
+```
+{
+    "traktor": "SOME_PATH/collection.nml",
+    "rekordbox": "SOME_PATH/rekordbox_library.xml",
+    "engine_prime": "SOME_PATH/Engine Library/"
+}
+```
+(see locations.json.template)
+
 Note: you can ignore `traktor` or `rekordbox` if you're not using one of them.
 
 # Notes
