@@ -140,9 +140,7 @@ class BeatAnchor:
         # TODO: Fix unknown with 0, 24576 etc. ?
         return hex_bytes
 
-_TEST_VITALIC = "40e588800000000041657ab800000000010000000000000002000000a03c6becc0fcffffffffffffff1702000000000000000060c34e7d6541130200000000000000000000ff7f00000000000000000002000000a03c6becc0fcffffffffffffff1702000000000000000060c34e7d6541130200000000000000000000ff7f0000"
-assert BeatData(_TEST_VITALIC).to_bytes() == bytes.fromhex(_TEST_VITALIC)
-
+# Debug utils
 if __name__ == "__main__":
     user_string = input()
     data = BeatData(user_string)
