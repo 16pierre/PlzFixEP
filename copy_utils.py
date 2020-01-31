@@ -23,6 +23,8 @@ My EP is broken: I can't drag and drop playlists or tracks to a flashdrive...
 import os
 import sys
 import json
+import threading
+import multiprocessing
 from pathlib import Path
 from shutil import copy
 
@@ -47,6 +49,28 @@ def copy_files(sources, dests):
         Path(dests[i]).parent.mkdir(parents=True, exist_ok=True)
         print("Copying %s to %s" % (sources[i], dests[i]))
         copy(sources[i], dests[i])
+
+def chunks(sources, dests, n):
+    for i in range(0, len(sources), n):
+        yield sources[i:i + n], dests[i:i + n]
+
+def multi_thread_copy_files(sources, dests, nb_threads):
+
+    if len(sources) < nb_threads:
+        copy_files(sources, dests)
+        return
+
+    chunk_size = int(len(sources) / nb_threads)
+    threads = []
+    for chunked_sources, chunked_dests in chunks(sources, dests, chunk_size):
+        t = threading.Thread(target=copy_files, args=(chunked_sources, chunked_dests))
+        t.daemon = True
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        t.join()
+
 
 def sources_to_targets(base_dir, target_dir, sources):
     return [str(Path(target_dir).joinpath(Path(s).relative_to(base_dir)).resolve().absolute()) for s in sources]
@@ -82,8 +106,11 @@ if __name__ == "__main__":
     database_files = get_files(ep_root)
     copy_files(database_files, sources_to_targets(ep_root, flash_drive_ep_root, database_files))
 
+    ep_master_db = os.path.join(ep_root, "m.db")
     flash_drive_ep_master_db = os.path.join(flash_drive_ep_root, "m.db")
-    tracks_to_id = database.get_track_absolute_filepaths_to_id_dict(flash_drive_ep_master_db)
+
+    tracks_to_id = database.get_track_absolute_filepaths_to_id_dict(ep_master_db)
+    tracks_to_id = database.cleanup_missing_tracks_from_db_and_return_valid_tracks(flash_drive_ep_master_db, tracks_to_id)
 
     music_sources = list(tracks_to_id.keys())
     music_absolute_targets = sources_to_flattened_targets(flash_drive_music_dir, music_sources)
@@ -93,7 +120,13 @@ if __name__ == "__main__":
     for i in range(len(music_sources)):
         id_to_new_music_paths[tracks_to_id[music_sources[i]]] = music_relative_targets[i]
 
+    tracks = list(id_to_new_music_paths.values())
+    for i in range(len(tracks)):
+        for j in range(i+1, len(tracks)):
+            if tracks[i] == tracks[j]:
+                print("duplicate: %s" % tracks[i])
+
     database.override_music_paths(flash_drive_ep_master_db, id_to_new_music_paths)
 
-    copy_files(music_sources, music_absolute_targets)
+    multi_thread_copy_files(music_sources, music_absolute_targets, multiprocessing.cpu_count())
     print("Done !")
