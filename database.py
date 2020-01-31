@@ -21,12 +21,14 @@ import sqlite3
 import json
 import PyQt5.QtCore as qtcore
 from beat_data import BeatData
+from pathlib import Path
 
 NAME_TABLE_PERFORMANCE_DATA = "PerformanceData"
 NAME_TABLE_TRACK = "Track"
 NAME_COL_ID = "id"
 NAME_COL_BEAT_DATA = "beatData"
 NAME_COL_FILENAME = "filename"
+NAME_COL_PATH = "path"
 
 def get_all_beat_data(path_performance_db, path_master_db):
     perf_conn = sqlite3.connect(path_performance_db)
@@ -58,6 +60,7 @@ def get_all_beat_data(path_performance_db, path_master_db):
     print("Tracks correctly loaded from Engine Prime: %d" % len(results))
     return results
 
+# TODO: use file path instead of name here, more robust; need more conversion to link with traktor data etc. though
 def get_track_filename_to_id_dict(path_master_db):
     master_conn = sqlite3.connect(path_master_db)
     master_c    = master_conn.cursor()
@@ -69,6 +72,33 @@ def get_track_filename_to_id_dict(path_master_db):
         results[row[1]] = row[0]
     master_conn.close()
     return results
+
+def relative_path_to_absolute_path(path_master_db, relative_path):
+    path = Path(path_master_db)
+    # relative paths in m.db are based on EP's database directory
+    return str(path.parent.joinpath(relative_path).resolve().absolute())
+
+def get_track_absolute_filepaths_to_id_dict(path_master_db):
+    master_conn = sqlite3.connect(path_master_db)
+    master_c    = master_conn.cursor()
+
+    results = {}
+
+    query_str = "SELECT %s,%s FROM %s" % (NAME_COL_ID, NAME_COL_PATH, NAME_TABLE_TRACK)
+    for row in master_c.execute(query_str):
+        if row[1]:
+            results[relative_path_to_absolute_path(path_master_db, row[1])] = row[0]
+    master_conn.close()
+    return results
+
+def override_music_paths(path_master_db, id_to_paths):
+    master_conn = sqlite3.connect(path_master_db)
+    master_c    = master_conn.cursor()
+    query_str = "UPDATE %s SET %s=? WHERE %s=?" % (NAME_TABLE_TRACK, NAME_COL_PATH, NAME_COL_ID)
+    for i in id_to_paths.keys():
+        master_c.execute(query_str, (id_to_paths[i], i))
+    master_conn.commit()
+    master_conn.close()
 
 def get_track_id_to_filename_dict(path_master_db):
     return {v: k for k, v in get_track_filename_to_id_dict(path_master_db).items()}
