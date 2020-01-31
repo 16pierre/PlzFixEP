@@ -44,17 +44,26 @@ def get_files(path):
     else:
         raise Exception("%s is not a folder" % path)
 
-def copy_files(sources, dests):
+def copy_files(sources, dests, override=False):
     for i in range(len(sources)):
         Path(dests[i]).parent.mkdir(parents=True, exist_ok=True)
-        print("Copying %s to %s" % (sources[i], dests[i]))
+        if not override and Path(dests[i]).exists():
+            print("Skipping copy %s to %s, already exists" % (sources[i], dests[i]))
+            continue
+
+        if Path(dests[i]).exists():
+            print("Copying %s to %s (overwrite)" % (sources[i], dests[i]))
+            os.remove(dests[i])
+        else:
+            print("Copying %s to %s (new)" % (sources[i], dests[i]))
+
         copy(sources[i], dests[i])
 
 def chunks(sources, dests, n):
     for i in range(0, len(sources), n):
         yield sources[i:i + n], dests[i:i + n]
 
-def multi_thread_copy_files(sources, dests, nb_threads):
+def multi_thread_copy_files(sources, dests, nb_threads, override=False):
 
     if len(sources) < nb_threads:
         copy_files(sources, dests)
@@ -63,7 +72,7 @@ def multi_thread_copy_files(sources, dests, nb_threads):
     chunk_size = int(len(sources) / nb_threads)
     threads = []
     for chunked_sources, chunked_dests in chunks(sources, dests, chunk_size):
-        t = threading.Thread(target=copy_files, args=(chunked_sources, chunked_dests))
+        t = threading.Thread(target=copy_files, args=(chunked_sources, chunked_dests, override))
         t.daemon = True
         t.start()
         threads.append(t)
@@ -104,7 +113,7 @@ if __name__ == "__main__":
     ep_root = config.get(KEY_ENGINE_PRIME_PATH)
 
     database_files = get_files(ep_root)
-    copy_files(database_files, sources_to_targets(ep_root, flash_drive_ep_root, database_files))
+    copy_files(database_files, sources_to_targets(ep_root, flash_drive_ep_root, database_files), override=True)
 
     ep_master_db = os.path.join(ep_root, "m.db")
     flash_drive_ep_master_db = os.path.join(flash_drive_ep_root, "m.db")
@@ -128,5 +137,5 @@ if __name__ == "__main__":
 
     database.override_music_paths(flash_drive_ep_master_db, id_to_new_music_paths)
 
-    multi_thread_copy_files(music_sources, music_absolute_targets, multiprocessing.cpu_count())
+    multi_thread_copy_files(music_sources, music_absolute_targets, multiprocessing.cpu_count(), override=False)
     print("Done !")
