@@ -22,17 +22,7 @@ import rekordbox
 import sys
 import json
 import os
-
-DEFAULT_PATH_PERFORMANCE_DB = "/Users/16pierre/Music/Engine Library/p.db"
-DEFAULT_PATH_MASTER_DB = "/Users/16pierre/Music/Engine Library/m.db"
-DEFAULT_PATH_TRAKTOR_DB = "/Users/16pierre/Documents/Native Instruments/Traktor 3.2.0/collection.nml"
-DEFAULT_PATH_REKORDBOX_DB = "/Users/16pierre/Documents/rekordbox_library.xml"
-SAMPLE_PATH_TRAKTOR_DB = "/Users/16pierre/MSI/sampleTraktorCollection/Swayzak.nml"
-
-KEY_REKORDBOX_PATH = "rekordbox"
-KEY_TRAKTOR_PATH = "traktor"
-KEY_ENGINE_PRIME_PATH = "engine_prime"
-DEFAULT_PATH_FOR_JSON_FILE = "./locations.json"
+from files_config import KEY_REKORDBOX_PATH, KEY_TRAKTOR_PATH, KEY_ENGINE_PRIME_PATH, DEFAULT_PATH_FOR_JSON_FILE
 
 if __name__ == "__main__":
 
@@ -68,7 +58,6 @@ if __name__ == "__main__":
         tracks_in_traktor = rekordbox.get_tracks(config.get(KEY_REKORDBOX_PATH))
 
     filename_to_id_dict = database.get_track_filename_to_id_dict(EP_MASTER_DB)
-    #tracks_in_traktor = traktor.get_tracks(DEFAULT_PATH_TRAKTOR_DB)
     print("Number of tracks found in %s: %s" % (soft, len(tracks_in_traktor)))
     print("Number of tracks found in Engine Prime: %s" % len(filename_to_id_dict))
     common_tracks = [t for t in tracks_in_traktor if t.filename in filename_to_id_dict]
@@ -90,7 +79,6 @@ if __name__ == "__main__":
 
 
     for track_id, traktor_track in engine_id_to_traktor_track.items():
-        #print("Track ID %s, traktor %s" % (track_id, traktor_track))
         beat_datas_by_id[track_id].override_with_external(traktor_track)
 
     database.update_beat_database(EP_PERF_DB, beat_datas_by_id.values())
