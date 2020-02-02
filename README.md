@@ -10,17 +10,9 @@ Supported imports:
 - Traktor -> Engine Prime
 - Rekordbox -> Engine Prime
 
-# Issues
-This is a quick and dirty first draft. There's a lot of issues with this code.
-
-- The current version of the code works on Engine Prime on computers, but fails on the players. (Last tested on `EP 1.3.3.c27c25d`)
-- This code has unexpected results on tracks with duplicate filenames
-
-Feel free to PR to fix it, I'm not actively coding on this projet at the moment, but I'll definitely review your PRs ;)
-
 # Usage
 
-First of all, BACKUP YOUR Engine Prime files ! (Location: Music/Engine Library)
+First of all, BACKUP your Engine Prime files ! (Location: Music/Engine Library)
 
 0. See [installation](#installation)
 1. Import your tracks normally in Engine Prime.
